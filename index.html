@@ -1,0 +1,795 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2747a8">
+<title>Середня лінія: тренажер</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;700&family=Nunito:wght@400;600;800&display=swap">
+<style>
+/* Layout: a squared exercise book. Drawings sit on "клітинка" paper; given values in orange pen, unknowns in teal. Tabs on top on a computer, at the bottom on a phone. */
+:root{
+  --bg:#eef1f6; --surface:#ffffff; --fg:#1b2333; --muted:#5b6578; --line:#d3d9e4; --grid:#e3eaf5;
+  --ink:#2747a8; --ink-soft:#e6ecfa;
+  --f1:#d4520f; --f1-soft:#fde9dc; --f2:#0a7d6c; --f2-soft:#d9f2ee;
+  --ok:#1f8a4c; --ok-soft:#dff1e6; --bad:#c2312d; --bad-soft:#f9e0de; --gold:#c98a00; --gold-soft:#fbf0d3;
+  --display:"Rubik","Trebuchet MS",sans-serif;
+  --body:"Nunito","Segoe UI",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#11151d; --surface:#1a202b; --fg:#e7ebf3; --muted:#a2acbd; --line:#2e3646; --grid:#242c3a;
+  --ink:#8fa8ff; --ink-soft:#212b45;
+  --f1:#ff9a5c; --f1-soft:#3c2618; --f2:#4fd1bc; --f2-soft:#163632;
+  --ok:#5ccb8b; --ok-soft:#183626; --bad:#ff7d72; --bad-soft:#3e1f1d; --gold:#ffc94d; --gold-soft:#3a2f12; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11151d; --surface:#1a202b; --fg:#e7ebf3; --muted:#a2acbd; --line:#2e3646; --grid:#242c3a;
+  --ink:#8fa8ff; --ink-soft:#212b45;
+  --f1:#ff9a5c; --f1-soft:#3c2618; --f2:#4fd1bc; --f2-soft:#163632;
+  --ok:#5ccb8b; --ok-soft:#183626; --bad:#ff7d72; --bad-soft:#3e1f1d; --gold:#ffc94d; --gold-soft:#3a2f12; color-scheme:dark}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:18px;line-height:1.5;margin:0}
+.wrap{max-width:1000px;margin:0 auto;padding-inline:16px;padding-block:22px 48px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:14px}
+header h1{font-family:var(--display);font-weight:700;font-size:clamp(1.45rem,4vw,2.3rem);line-height:1.15;margin:0 0 4px;text-wrap:balance}
+header p{margin:0;color:var(--muted);max-width:56ch}
+header p.teacher{margin-top:4px;font-weight:800;color:var(--ink)}
+.rank{background:var(--surface);border:2px solid var(--gold);border-radius:14px;padding:8px 12px;min-width:220px;display:grid;gap:3px}
+.rank .top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.rank b{font-family:var(--display);font-weight:500;font-size:1rem;color:var(--gold)}
+.rank span{font-weight:800;font-size:.95rem;font-variant-numeric:tabular-nums}
+.rank .meter{height:8px;border-radius:99px;background:var(--gold-soft);overflow:hidden}
+.rank .meter i{display:block;height:100%;width:0;background:var(--gold);border-radius:99px;transition:width .5s}
+.rank small{color:var(--muted);font-size:.8rem}
+
+.tabs{display:flex;flex-wrap:wrap;gap:8px;margin:20px 0 16px}
+.tab{font:inherit;font-weight:800;font-size:1rem;padding:9px 18px;border-radius:999px;border:2px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer;display:flex;align-items:center;gap:8px}
+.tab b{font-family:var(--display);font-weight:500;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;border:2px solid var(--line);font-size:.9rem}
+.tab[aria-selected="true"]{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+.tab[aria-selected="true"] b{border-color:var(--surface)}
+button:focus-visible,input:focus-visible{outline:3px solid var(--f1);outline-offset:2px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:clamp(16px,3vw,26px)}
+h2{font-family:var(--display);font-weight:500;font-size:1.35rem;margin:0 0 6px;text-wrap:balance}
+h3{font-family:var(--display);font-weight:500;font-size:1.1rem;margin:0 0 8px}
+.lead{color:var(--muted);margin:0 0 16px;max-width:66ch}
+
+.btn{font:inherit;font-weight:800;font-size:1rem;padding:10px 16px;min-height:46px;border-radius:12px;border:2px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer}
+.btn.main{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+.btn.hint{border-color:var(--gold);background:var(--gold-soft)}
+.btn:disabled{opacity:.45;cursor:default}
+.row-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.pills{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.pills button{font:inherit;font-weight:800;font-size:.95rem;padding:7px 14px;min-height:40px;border-radius:999px;border:2px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer}
+.pills button[aria-pressed="true"]{border-color:var(--ink);background:var(--ink-soft);color:var(--ink)}
+
+/* drawings on squared paper */
+.fig{border:1px solid var(--line);border-radius:14px;padding:6px;
+  background-color:var(--surface);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:16px 16px}
+.fig svg{display:block;width:100%;height:auto;max-height:250px}
+.fig .sf{fill:var(--ink-soft);opacity:.85}
+.fig .so{fill:none;stroke:var(--ink);stroke-width:2.6;stroke-linejoin:round}
+.fig .shade{fill:var(--f2-soft);opacity:.95}
+.fig line,.fig path,.fig polyline{fill:none;stroke:var(--ink);stroke-width:2;stroke-linecap:round}
+.fig .diag{stroke:var(--muted);stroke-width:1.8}
+.fig .hl{stroke-width:5}
+.fig .c1{stroke:var(--f1)} .fig .c2{stroke:var(--f2)} .fig .cm{stroke:var(--muted)}
+.fig text{font-family:var(--body);font-weight:800;font-size:15px;fill:var(--fg);paint-order:stroke;stroke:var(--surface);stroke-width:4px;stroke-linejoin:round}
+.fig text.vl{font-size:17px;fill:var(--ink)}
+.fig text.c1{fill:var(--f1);stroke:var(--surface)} .fig text.c2,.fig text.q{fill:var(--f2);stroke:var(--surface)}
+.fig text.q{font-size:17px}
+.fig .dot{fill:var(--ink)}
+.cap{margin-top:8px;text-align:center;font-weight:800;color:var(--ink);font-size:1.05rem}
+
+/* theory */
+.theory{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:18px;align-items:start}
+.tree{display:grid;grid-template-columns:1fr 1fr;gap:0;align-items:center}
+.tree .wide{grid-column:1/-1;justify-self:center}
+.tree .conn{grid-column:1/-1;height:22px}
+.tree .conn svg{width:100%;height:22px;display:block}
+.tree .conn line{stroke:var(--line);stroke-width:2.5}
+.fam{font:inherit;font-weight:800;font-size:.95rem;border:2px solid var(--line);border-radius:14px;background:var(--bg);color:var(--fg);padding:6px 12px 6px 6px;cursor:pointer;display:flex;align-items:center;gap:8px;justify-self:center;min-height:48px}
+.fam svg{width:38px;height:30px;flex:none}
+.fam svg polygon{fill:var(--ink-soft);stroke:var(--ink);stroke-width:2.5;stroke-linejoin:round}
+.fam[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:var(--surface)}
+.fam[aria-pressed="true"] svg polygon{fill:var(--surface);stroke:var(--surface)}
+.def{margin:0 0 12px;padding:10px 14px;border-radius:12px;background:var(--ink-soft);border-left:5px solid var(--ink)}
+.props{display:grid;gap:8px;margin-top:12px}
+.props button{font:inherit;font-size:1rem;font-weight:700;text-align:left;padding:10px 12px;min-height:46px;border-radius:12px;border:2px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer;display:flex;gap:10px;align-items:center}
+.props button::before{content:"";flex:none;width:12px;height:12px;border-radius:50%;border:2px solid var(--line)}
+.props button[aria-pressed="true"]{border-color:var(--f1);background:var(--f1-soft)}
+.props button[aria-pressed="true"]::before{background:var(--f1);border-color:var(--f1)}
+.note{margin-top:12px;color:var(--muted);font-size:.95rem}
+h4.sec{font-family:var(--display);font-weight:700;font-size:1rem;margin:18px 0 0;padding:4px 12px;border-radius:8px;display:inline-block;background:var(--ink);color:var(--surface);letter-spacing:.02em}
+.thfig{position:sticky;top:0;z-index:2;background:var(--surface);padding:6px 0 4px}
+.fbfig{margin-top:10px;max-width:300px}
+.fbfig svg{max-height:170px}
+.lvlprog{display:flex;align-items:center;gap:8px;font-weight:800;font-size:.9rem;color:var(--muted);margin:0 0 12px}
+.lvlprog i{width:18px;height:18px;border-radius:50%;border:2px solid var(--line);display:inline-block}
+.lvlprog i.on{background:var(--ok);border-color:var(--ok)}
+.namebox{display:grid;gap:8px;margin:0 0 14px;max-width:420px}
+.namebox label{font-weight:800;display:grid;gap:4px}
+.namebox input{font:inherit;padding:9px 12px;border:2px solid var(--line);border-radius:10px;background:var(--surface);color:var(--fg)}
+
+/* warm-up */
+.qcard{max-width:620px;margin:0 auto}
+.progress{display:flex;justify-content:space-between;gap:10px;font-weight:800;color:var(--muted);font-size:.95rem;margin-bottom:8px}
+.dots{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px}
+.dots i{width:22px;height:8px;border-radius:99px;background:var(--line)}
+.dots i.ok{background:var(--ok)} .dots i.no{background:var(--bad)} .dots i.cur{background:var(--ink)}
+.qtext{font-size:1.15rem;font-weight:700;margin:10px 0 4px}
+.qkind{font-family:var(--display);font-weight:500;color:var(--f1);font-size:.95rem}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.opts button{font:inherit;font-weight:800;font-size:1.05rem;padding:12px;min-height:52px;border-radius:12px;border:2px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer}
+.opts button.right{background:var(--ok-soft);border-color:var(--ok)}
+.opts button.wrong{background:var(--bad-soft);border-color:var(--bad)}
+.opts button:disabled{cursor:default}
+.fb{margin-top:12px;padding:12px 14px;border-radius:12px;font-size:1rem}
+.fb.ok{background:var(--ok-soft)} .fb.no{background:var(--bad-soft)} .fb.info{background:var(--gold-soft)}
+.fb .ttl{font-weight:800;display:block}
+.final{text-align:center;padding:10px 0}
+.final .big{font-family:var(--display);font-weight:700;font-size:3rem;line-height:1.1;color:var(--ink)}
+.final p{margin:6px 0}
+
+/* tasks */
+.task{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;align-items:start}
+.thead{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:center;margin-bottom:6px}
+.lvl{font-weight:800;font-size:.85rem;padding:3px 10px;border-radius:99px;background:var(--gold-soft);color:var(--fg);border:1px solid var(--gold)}
+.streak{font-weight:800;font-size:.9rem;color:var(--f1)}
+.ttext{font-size:1.1rem;margin:4px 0 12px}
+.ins{display:flex;flex-wrap:wrap;gap:10px}
+.in{display:flex;align-items:center;gap:6px;font-weight:800;font-size:1.1rem}
+.in input{font:inherit;font-weight:800;width:4.6em;text-align:center;padding:7px 6px;border:2px solid var(--line);border-radius:10px;background:var(--surface);color:var(--fg)}
+.in input.ok{border-color:var(--ok);background:var(--ok-soft)}
+.in input.no{border-color:var(--bad);background:var(--bad-soft)}
+.in .u{color:var(--muted);font-weight:700}
+.hints{margin:12px 0 0;padding:0;list-style:none;display:grid;gap:6px}
+.hints li{padding:8px 12px;border-radius:10px;background:var(--gold-soft);border-left:4px solid var(--gold);font-size:1rem}
+.hints li b{color:var(--gold)}
+.sol{font-weight:800}
+/* proof ordering */
+.ord h4{margin:10px 0 6px;font-size:.9rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.ord ol,.ord ul{margin:0;padding:0;list-style:none;display:grid;gap:6px}
+.ord button{font:inherit;font-size:.98rem;text-align:left;width:100%;padding:9px 12px;min-height:44px;border-radius:10px;border:2px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer;display:flex;gap:8px}
+.ord .placed button{border-color:var(--ink);background:var(--ink-soft)}
+.ord .placed button i{font-style:normal;font-weight:800;color:var(--ink);flex:none}
+.ord .placed button.no{border-color:var(--bad);background:var(--bad-soft)}
+.ord .placed button.ok{border-color:var(--ok);background:var(--ok-soft)}
+.ord .empty{color:var(--muted);font-size:.95rem;padding:8px 12px;border:2px dashed var(--line);border-radius:10px}
+
+/* exam */
+.exbar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px}
+.exdots{display:flex;flex-wrap:wrap;gap:6px}
+.exdots button{font:inherit;font-weight:800;font-size:.85rem;width:34px;height:34px;border-radius:50%;border:2px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer;padding:0}
+.exdots button.ans{background:var(--ink-soft);border-color:var(--ink)}
+.exdots button.cur{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+.rules{margin:0 0 14px;padding-left:1.2em}
+.rules li{margin:4px 0}
+.review{display:grid;gap:8px;margin-top:14px;text-align:left}
+.review div{border:2px solid var(--line);border-radius:12px;padding:10px 12px;font-size:.98rem}
+.review div.ok{border-color:var(--ok)} .review div.part{border-color:var(--gold)} .review div.no{border-color:var(--bad)}
+.review b{display:block}
+
+.toast{position:fixed;left:50%;top:14px;transform:translate(-50%,-200px);visibility:hidden;transition:transform .35s;z-index:30;background:var(--gold);color:#1b1400;font-weight:800;padding:10px 18px;border-radius:99px;box-shadow:0 6px 20px rgba(0,0,0,.18);max-width:calc(100vw - 32px);text-align:center}
+.toast.show{transform:translate(-50%,0);visibility:visible}
+
+@media (max-width:820px){
+  .theory,.task{grid-template-columns:minmax(0,1fr)}
+}
+/* ---------- phone ---------- */
+@media (max-width:720px){
+  body{font-size:17px}
+  .wrap{padding-block:12px calc(92px + env(safe-area-inset-bottom,0px))}
+  header{align-items:stretch}
+  header h1{font-size:1.4rem}
+  header p{font-size:.9rem}
+  .rank{width:100%;min-width:0}
+  .tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;margin:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:2px;
+    padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px));background:var(--surface);border-top:1px solid var(--line);box-shadow:0 -4px 16px rgba(0,0,0,.07)}
+  .tab{border:0;border-radius:12px;padding:5px 2px;font-size:.74rem;font-weight:700;flex-direction:column;gap:2px;background:transparent;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tab b{width:30px;height:30px;font-size:1rem}
+  .tab[aria-selected="true"]{background:var(--ink-soft);color:var(--ink)}
+  .tab[aria-selected="true"] b{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+  .panel{margin-top:12px;padding:16px 12px;border-radius:16px}
+  h2{font-size:1.2rem}
+  .lead{font-size:.95rem}
+  .pills{flex-wrap:nowrap;overflow-x:auto;margin-inline:-12px;padding:0 12px 4px}
+  .pills button{flex:none}
+  .fam{font-size:.85rem;padding:4px 8px 4px 4px}
+  .fam svg{width:32px;height:26px}
+  .opts{grid-template-columns:1fr}
+  .opts.two{grid-template-columns:1fr 1fr}
+  .row-btns .btn{flex:1 1 auto}
+  .ttext{font-size:1.05rem}
+  .toast{top:10px}
+}
+/* coordinate plane */
+.fig:has(svg.pl){background-image:none}
+.fig .gr{stroke:var(--grid);stroke-width:1}
+.fig .ax{stroke:var(--fg);stroke-width:1.6}
+.fig .axh{fill:none;stroke:var(--fg);stroke-width:1.6}
+.fig .dash{stroke:var(--muted);stroke-width:1.6;stroke-dasharray:5 4}
+.fig .dash.c1{stroke:var(--f1)} .fig .dash.c2{stroke:var(--f2)}
+.fig .seg{stroke:var(--ink);stroke-width:2.6}
+.fig .seg.c1{stroke:var(--f1)} .fig .seg.c2{stroke:var(--f2)}
+.fig .lnn{stroke:var(--ink);stroke-width:2.4}
+.fig .lnn.c1{stroke:var(--f1)} .fig .lnn.c2{stroke:var(--f2)}
+.fig circle.cc{fill:none;stroke:var(--ink);stroke-width:2.4}
+.fig circle.cc.c1{stroke:var(--f1)} .fig circle.cc.c2{stroke:var(--f2)}
+.fig .arc0{fill:none;stroke:var(--ink);stroke-width:2.4}
+.fig .pd{fill:var(--ink)} .fig .pd.c1{fill:var(--f1)} .fig .pd.c2,.fig .pd.q{fill:var(--f2)}
+.fig text.tk{font-size:11px;font-weight:600;fill:var(--muted);stroke-width:3px}
+.fig text.axn{font-size:15px;font-style:italic;fill:var(--fg)}
+.fig text.big{font-size:20px;fill:var(--muted)}
+.fig text.sm{font-size:13px}
+.fig .shade{fill:var(--f2-soft);opacity:.95}
+.fig .shade1{fill:var(--f1-soft);opacity:.95}
+/* topics */
+.topics{display:grid;gap:8px}
+.topics .fam{justify-self:stretch;text-align:left}
+.fam svg path,.fam svg line,.fam svg circle{fill:none;stroke:var(--ink);stroke-width:2.4;stroke-linecap:round}
+.fam svg .d{fill:var(--ink);stroke:none}
+.fam[aria-pressed="true"] svg path,.fam[aria-pressed="true"] svg line,.fam[aria-pressed="true"] svg circle{stroke:var(--surface)}
+.fam[aria-pressed="true"] svg .d{fill:var(--surface)}
+.fam .num{font-family:var(--display);font-weight:500;color:var(--muted);font-size:.85rem;margin-left:auto}
+.fam[aria-pressed="true"] .num{color:var(--surface)}
+table.tv{border-collapse:collapse;margin-top:10px;font-size:.95rem;font-variant-numeric:tabular-nums;min-width:100%}
+.tvw{overflow-x:auto;margin-top:6px;max-width:100%}
+table.tv th,table.tv td{border:1px solid var(--line);padding:6px 8px;text-align:center;white-space:nowrap}
+table.tv th{background:var(--ink-soft);color:var(--ink);font-family:var(--display);font-weight:500}
+table.tv td.neg{color:var(--f1);font-weight:800}
+.in .pm{font:inherit;font-weight:800;min-width:38px;min-height:40px;border-radius:10px;border:2px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer;padding:0 6px}
+.eq{font-weight:800;font-size:1.1rem;margin:0 0 10px;padding:8px 12px;border-radius:10px;background:var(--ink-soft);display:inline-block}
+.opts button[aria-pressed="true"]{border-color:var(--ink);background:var(--ink-soft)}
+.opts.four{grid-template-columns:1fr 1fr}
+.fr{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:2px 3px;line-height:1.25}
+.fr>span{padding:0 3px;white-space:nowrap}.prop{white-space:nowrap;display:inline-block}
+.h2n{font-family:var(--body);font-weight:600;font-size:.95rem;color:var(--muted)}
+#p-th h2{margin-bottom:14px}
+.panel .lead,.rules{font-size:.82rem;line-height:1.4;margin-bottom:10px}
+@media (max-width:820px){.theory{gap:12px}#thName{margin:4px 0 6px}}
+.kp{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;max-width:330px;margin-top:12px}
+.kp button{font:inherit;font-weight:800;font-size:1.25rem;min-height:50px;border-radius:12px;border:2px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer;touch-action:manipulation}
+.kp button:active{background:var(--ink-soft);border-color:var(--ink)}
+.kp .w{grid-column:span 2;font-size:1rem}
+.kp .del{color:var(--bad)}
+.eqrow{align-items:center;gap:4px;font-weight:800;font-size:1.15rem}.eqrow .in input{width:2.9em;padding:7px 2px}
+.in input.act{border-color:var(--ink);box-shadow:0 0 0 3px var(--ink-soft)}.fr>span+span{border-top:2px solid currentColor}
+.author{margin:18px 0 0;font-size:.75rem;color:var(--muted);opacity:.6;text-align:left}
+.fig .so{stroke-width:2.6}
+/* ---------- середня лінія: доповнення ---------- */
+@media (max-width:720px){.tabs{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.dots i.help{background:var(--gold)}
+.steps{margin:12px 0 0;padding:0;list-style:none;display:grid;gap:6px}
+.steps li{padding:8px 12px;border-radius:10px;background:var(--gold-soft);border-left:4px solid var(--gold);font-size:1rem}
+.steps li b{color:var(--gold)}
+h3 .lvl{font-family:var(--body);font-size:.8rem;vertical-align:middle;margin-left:6px}
+.opts.pics{grid-template-columns:1fr 1fr;max-width:640px}
+.opts.pics button{padding:6px;display:grid;gap:4px;text-align:left}
+.opts.pics .pl{font-family:var(--display);font-weight:500;padding-left:6px}
+.opts.pics .fig{padding:2px;border-radius:10px}
+.opts.pics .fig svg{overflow:visible;max-height:170px}
+.opts.pics .fig text{font-size:27px;stroke-width:6px}
+.opts.pics .fig .so{stroke-width:4}
+.opts.pics .fig .hl{stroke-width:7}
+.opts.pics .fig line{stroke-width:3}
+.opts.pics .fig .dot{r:6}
+.opts.pics button[aria-pressed="true"]{border-color:var(--ink);background:var(--ink-soft)}
+.fig .cg{cursor:pointer}
+.fig .hit{fill:transparent;stroke:none}
+.fig .cand{fill:var(--surface);stroke:var(--ink);stroke-width:2.2}
+.fig .cand.on{fill:var(--f1);stroke:var(--f1)}
+.fig .cand.okp{fill:var(--ok);stroke:var(--ok)}
+.fig.con svg{max-height:290px}
+.selst{font-weight:800;color:var(--muted);font-size:.95rem;margin:4px 0 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Середня лінія трикутника і трапеції</h1>
+    </div>
+    <div class="rank" aria-live="polite">
+      <div class="top"><b id="rkName"></b><span id="rkPts">0 балів</span></div>
+      <div class="meter"><i id="rkBar"></i></div>
+      <small id="rkNext"></small>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Розділи тренажера">
+    <button class="tab" role="tab" id="t-th" aria-controls="p-th" aria-selected="true"><b>1</b>Пояснення</button>
+    <button class="tab" role="tab" id="t-tr" aria-controls="p-tr" aria-selected="false"><b>2</b>Тренування</button>
+    <button class="tab" role="tab" id="t-ex" aria-controls="p-ex" aria-selected="false"><b>3</b>Тестування</button>
+  </nav>
+
+  <section class="panel" id="p-th" role="tabpanel" aria-labelledby="t-th">
+    <h2>Пояснення <span class="h2n">(натисни на тему, потім на правило)</span></h2>
+    <div class="theory">
+      <div><div class="topics" id="topics"></div></div>
+      <div>
+        <h3 id="thName"></h3>
+        <div class="thfig"><div class="fig" id="thFig"></div><div class="cap" id="thCap"></div></div>
+        <div id="thBody"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="p-tr" role="tabpanel" aria-labelledby="t-tr" hidden>
+    <h2>Тренування <span class="h2n">(8 завдань; кнопка «Крок» пояснює розв'язання)</span></h2>
+    <div id="tr"></div>
+  </section>
+
+  <section class="panel" id="p-ex" role="tabpanel" aria-labelledby="t-ex" hidden>
+    <h2>Тестування <span class="h2n">(8 завдань, 12 балів)</span></h2>
+    <div id="ex"></div>
+  </section>
+  <p class="author">© Сидорчук Н.В.</p>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+/* Куди надсилати результати тестування (сервіс FormSubmit.co). Порожньо = автоматичне надсилання вимкнене.
+   Після першого надісланого результату на цю адресу прийде лист з кнопкою «Activate Form»: її треба натиснути один раз. */
+const TEACHER_EMAIL='snv.teacher@gmail.com';
+const TITLE='Середня лінія трикутника і трапеції';
+const KEY='mid8-';
+const $=id=>document.getElementById(id);
+const rnd=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+function plural(n,f1,f2,f5){const m=Math.abs(n)%100,k=m%10;if(m>10&&m<20)return f5;if(k===1)return f1;if(k>=2&&k<=4)return f2;return f5}
+const baly=n=>n+' '+plural(n,'бал','бали','балів');
+const fn=n=>(n<0?'−':'')+String(Math.abs(Math.round(n*1000)/1000)).replace('.',',');
+/* дроби завжди з горизонтальною рискою: «a : b» у тексті стає дробом */
+const FR=(a,b)=>`<span class="fr"><span>${a}</span><span>${b}</span></span>`;
+const P1='\\((?:[^()]|\\([^()]*\\))*\\)',TOK='[^\\s()<>;,]+';
+const unp=x=>x[0]==='('&&x[x.length-1]===')'?x.slice(1,-1):x;
+function FX(s){if(typeof s!=='string')return s;
+  s=s.replace(new RegExp(`(${P1}|${TOK}) : (${P1}|${TOK})`,'g'),(m,a,b)=>{let e='';const t=b.match(/[.]+$/);if(t&&b[0]!=='('){e=t[0];b=b.slice(0,-e.length)}return FR(unp(a),unp(b))+e});
+  return s}
+const strip=s=>String(s).replace(/<[^>]+>/g,'');
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ---------- drawing ---------- */
+const V=(x,y)=>({x,y});
+const f1=n=>Math.round(n*10)/10;
+const R=Math.PI/180;
+const lerp=(p,q,t)=>V(p.x+(q.x-p.x)*t,p.y+(q.y-p.y)*t),mid=(p,q)=>lerp(p,q,.5);
+function unit(a,b){const dx=b.x-a.x,dy=b.y-a.y,l=Math.hypot(dx,dy)||1;return V(dx/l,dy/l)}
+function add(p,u,k){return V(p.x+u.x*k,p.y+u.y*k)}
+const ln=(a,b,c)=>`<line class="${c||''}" x1="${f1(a.x)}" y1="${f1(a.y)}" x2="${f1(b.x)}" y2="${f1(b.y)}"/>`;
+const tx=(p,t,c)=>`<text class="${c||''}" x="${f1(p.x)}" y="${f1(p.y)}" text-anchor="middle" dominant-baseline="central">${t}</text>`;
+function chev(p,q,c){const u=unit(p,q),pr=V(-u.y,u.x),t=add(lerp(p,q,.62),u,5),b=add(t,u,-8);
+  return `<polyline class="${c||''}" points="${f1(add(b,pr,6).x)},${f1(add(b,pr,6).y)} ${f1(t.x)},${f1(t.y)} ${f1(add(b,pr,-6).x)},${f1(add(b,pr,-6).y)}"/>`}
+function tick(p,q,n,c){const u=unit(p,q),pr=V(-u.y,u.x),m=mid(p,q);let s='';
+  for(let i=0;i<n;i++){const t=add(m,u,(i-(n-1)/2)*6);s+=ln(add(t,pr,7),add(t,pr,-7),c||'')}return s}
+/* o: poly, segs[[a,b,cls]], ticks[[a,b,n]], chev[[a,b]], dots[k], lab[k], n{k:name}, off{k:[dx,dy]}, sides[{a,b,t,c,o:[dx,dy],at,dd}], post (svg) */
+function scene(P,o){const W=o.W||340,H=o.H||215,N=o.n||{},nm=k=>N[k]||k;
+  const poly=o.poly.map(k=>P[k]),cen=V(poly.reduce((s,p)=>s+p.x,0)/poly.length,poly.reduce((s,p)=>s+p.y,0)/poly.length);
+  const pts=poly.map(p=>f1(p.x)+','+f1(p.y)).join(' ');
+  let s=`<polygon class="sf" points="${pts}"/><polygon class="so" points="${pts}"/>`;
+  (o.segs||[]).forEach(([a,b,c])=>s+=ln(P[a],P[b],c||''));
+  (o.ticks||[]).forEach(([a,b,n])=>s+=tick(P[a],P[b],n,'cm'));
+  (o.chev||[]).forEach(([a,b])=>s+=chev(P[a],P[b],'cm'));
+  s+=o.post||'';
+  (o.dots||[]).forEach(k=>s+=`<circle class="dot" cx="${f1(P[k].x)}" cy="${f1(P[k].y)}" r="4"/>`);
+  const lab=[];
+  [...o.poly,...(o.dots||[]),...(o.lab||[])].filter((k,i,a)=>a.indexOf(k)===i).forEach(k=>{const off=(o.off||{})[k];
+    lab.push(tx(off?V(P[k].x+off[0],P[k].y+off[1]):add(P[k],unit(cen,P[k]),16),nm(k),'vl'))});
+  (o.sides||[]).forEach(sd=>{const p=P[sd.a],q=P[sd.b],m=lerp(p,q,sd.at??.5);let pos;
+    if(sd.o)pos=V(m.x+sd.o[0],m.y+sd.o[1]);else{const u=unit(p,q);let nr=V(-u.y,u.x);if((m.x-cen.x)*nr.x+(m.y-cen.y)*nr.y<0)nr=V(-nr.x,-nr.y);pos=add(m,nr,sd.dd||15)}
+    lab.push(tx(pos,sd.t,sd.c||'c1'))});
+  return `<svg class="${o.sk?'pl':''}" viewBox="0 0 ${W} ${H}">${s}${lab.join('')}</svg>`}
+
+/* трикутник ABC: AB — нижня сторона; K — середина AC, L — середина BC, M — середина AB (як у підручнику, мал. 9.2) */
+const TRI=[{A:V(26,190),B:V(314,190),C:V(116,30)},{A:V(26,190),B:V(314,190),C:V(224,30)},{A:V(36,190),B:V(304,190),C:V(170,28)}];
+function triP(sh){const S=TRI[sh||0],P={A:S.A,B:S.B,C:S.C};P.K=mid(P.A,P.C);P.L=mid(P.B,P.C);P.M=mid(P.A,P.B);return P}
+const TTK={K:[['A','K',1],['K','C',1]],L:[['B','L',2],['L','C',2]],M:[['A','M',3],['M','B',3]]};
+function tri(o={}){const P=triP(o.sh);if(o.ex)Object.assign(P,o.ex(P));
+  return scene(P,{poly:['A','B','C'],segs:o.segs,ticks:(o.mids||[]).flatMap(k=>TTK[k]),dots:o.dots||o.mids,sides:o.sides,n:o.n,sk:o.sk,off:o.off,chev:o.chev,post:o.post})}
+/* трапеція ABCD: AD — нижня основа, BC — верхня; E — середина AB, F — середина CD, EF — середня лінія (мал. 10.1) */
+const TRS=[[64,54],[70,50],[58,58],[90,60],[60,72]];
+function trapFrom(a,d){const W=340,H=215,base=230;let h=118;
+  const ca=1/Math.tan(a*R),cd=1/Math.tan(d*R),den=ca+cd;if(den>0)h=Math.min(h,(base-80)/den);
+  const A=V(0,0),D=V(base,0),B=V(h*ca,-h),C=V(base-h*cd,-h);
+  const xs=[A,B,C,D].map(p=>p.x),mn=Math.min(...xs),mx=Math.max(...xs),k=Math.min(1,(W-70)/(mx-mn));
+  const sx=(W-(mx-mn)*k)/2-mn*k,sy=H/2+h*k/2+4,T=p=>V(p.x*k+sx,p.y*k+sy);
+  return {A:T(A),B:T(B),C:T(C),D:T(D)}}
+function trapP(sh){const [a,d]=TRS[sh||0],P=trapFrom(a,d);P.E=mid(P.A,P.B);P.F=mid(P.D,P.C);P.M=mid(P.B,P.C);P.N=mid(P.A,P.D);return P}
+const TPK={E:[['A','E',1],['E','B',1]],F:[['D','F',2],['F','C',2]],M:[['B','M',3],['M','C',3]],N:[['A','N',4],['N','D',4]]};
+function trap(o={}){const P=trapP(o.sh);if(o.ex)Object.assign(P,o.ex(P));
+  return scene(P,{poly:['A','B','C','D'],segs:o.segs,ticks:(o.mids||[]).flatMap(k=>TPK[k]),dots:o.dots||o.mids,sides:o.sides,n:o.n,sk:o.sk,off:o.off,
+    chev:o.chev===false?[]:[['B','C'],['A','D'],...(o.chev||[])],post:o.post})}
+
+/* ---------- rank & toast ---------- */
+const RANKS=[[0,'Учень креслення'],[8,'Кресляр'],[20,'Землемір'],[36,'Геометр'],[56,'Головний архітектор']];
+let PTS=0;try{PTS=parseInt(localStorage.getItem(KEY+'pts'))||0}catch(e){}
+const rankOf=p=>{let r=0;RANKS.forEach((x,i)=>{if(p>=x[0])r=i});return r};
+function drawRank(){const r=rankOf(PTS);$('rkName').textContent=RANKS[r][1];$('rkPts').textContent=baly(PTS);
+  if(r<RANKS.length-1){const a=RANKS[r][0],b=RANKS[r+1][0];$('rkBar').style.width=Math.round((PTS-a)/(b-a)*100)+'%';$('rkNext').textContent=`ще ${baly(b-PTS)} до звання «${RANKS[r+1][1]}»`}
+  else{$('rkBar').style.width='100%';$('rkNext').textContent='Найвище звання! Тепер тримай форму.'}}
+let toastT;function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2300)}
+function award(n,silent){if(n<=0)return;const r0=rankOf(PTS);PTS+=n;try{localStorage.setItem(KEY+'pts',PTS)}catch(e){}drawRank();
+  const r1=rankOf(PTS);if(r1>r0)toast(`Нове звання: «${RANKS[r1][1]}»!`);else if(!silent)toast('+'+baly(n))}
+drawRank();
+
+/* ---------- tabs ---------- */
+const tabs=[...document.querySelectorAll('.tab')];
+function openTab(t){tabs.forEach(x=>{const on=x===t;x.setAttribute('aria-selected',on);$(x.getAttribute('aria-controls')).hidden=!on});window.scrollTo(0,0);
+  try{localStorage.setItem(KEY+'tab',t.id)}catch(e){}}
+tabs.forEach(t=>t.addEventListener('click',()=>openTab(t)));
+
+/* ---------- 1. пояснення ---------- */
+const TOP={
+  tri:{n:'Середня лінія трикутника',p:'§ 9',ic:'<path d="M3 26 L37 26 L14 4 Z"/><line x1="8.5" y1="15" x2="25.5" y2="15"/>',secs:[
+    {h:'Означення',it:[
+      {t:'<b>Середня лінія трикутника</b> — відрізок, що сполучає середини двох його сторін.',cap:'AK = KC,  BL = LC,  KL — середня лінія',
+        f:()=>tri({mids:['K','L'],segs:[['K','L','hl c2']]})},
+      {t:'Кожний трикутник має <b>три</b> середні лінії.',cap:'KL, LM і KM — середні лінії трикутника ABC',
+        f:()=>tri({mids:['K','L','M'],segs:[['K','L','c2 hl'],['L','M','c2 hl'],['K','M','c2 hl']]})},
+      {t:'Не плутай: відрізок від вершини до середини протилежної сторони — це <b>медіана</b>, а не середня лінія.',cap:'CM — медіана, KL — середня лінія',
+        f:()=>tri({mids:['K','L','M'],segs:[['C','M','dash c1'],['K','L','hl c2']]})}]},
+    {h:'Властивість',it:[
+      {t:'Середня лінія трикутника <b>паралельна</b> третій стороні і дорівнює її <b>половині</b>:  KL ∥ AB,  KL = AB : 2.',cap:'KL = 12 : 2 = 6 см',
+        f:()=>tri({mids:['K','L'],segs:[['K','L','hl c2']],chev:[['K','L'],['A','B']],sides:[{a:'A',b:'B',t:'12 см',at:.3},{a:'K',b:'L',t:'6 см',c:'q',o:[0,-14]}]})},
+      {t:'Навпаки: сторона вдвічі більша за середню лінію, яка їй паралельна:  AB = 2 · KL.',cap:'AB = 2 · 5 = 10 см',
+        f:()=>tri({mids:['K','L'],segs:[['K','L','hl c2']],sides:[{a:'A',b:'B',t:'? см',c:'q',at:.3},{a:'K',b:'L',t:'5 см',o:[0,-14]}]})},
+      {t:'Периметр трикутника, утвореного середніми лініями, удвічі менший від периметра даного трикутника.',cap:'P = (10 + 12 + 14) : 2 = 18 см',
+        f:()=>tri({mids:['K','L','M'],segs:[['K','L','c2 hl'],['L','M','c2 hl'],['K','M','c2 hl']],sides:[{a:'A',b:'B',t:'14',at:.25},{a:'B',b:'C',t:'12',at:.25},{a:'A',b:'C',t:'10',at:.25}]})}]},
+    {h:'Побудова',it:[
+      {t:'Щоб побудувати середню лінію, знайди середини двох сторін (виміряй лінійкою і поділи навпіл) і сполучи їх.',cap:'AC = 6 см → AK = 3 см',
+        f:()=>{const P=triP(0);let post='';for(let i=1;i<6;i++){const p=lerp(P.A,P.C,i/6);post+=`<circle class="cand${i===3?' on':''}" cx="${f1(p.x)}" cy="${f1(p.y)}" r="${i===3?7:4}"/>`}
+          for(let i=1;i<4;i++){const p=lerp(P.B,P.C,i/4);post+=`<circle class="cand${i===2?' on':''}" cx="${f1(p.x)}" cy="${f1(p.y)}" r="${i===2?7:4}"/>`}
+          return scene(P,{poly:['A','B','C'],segs:[['K','L','hl c2']],post,lab:['K','L']})}}]}]},
+  trap:{n:'Середня лінія трапеції',p:'§ 10',ic:'<path d="M11 5 L29 5 L37 26 L3 26 Z"/><line x1="7" y1="15.5" x2="33" y2="15.5"/>',secs:[
+    {h:'Означення',it:[
+      {t:'<b>Середня лінія трапеції</b> — відрізок, що сполучає середини її <b>бічних сторін</b>.',cap:'AE = EB,  CF = FD,  EF — середня лінія',
+        f:()=>trap({mids:['E','F'],segs:[['E','F','hl c2']]})},
+      {t:'У трапеції лише <b>одна</b> середня лінія. Відрізок між серединами основ — не середня лінія.',cap:'MN — не середня лінія',
+        f:()=>trap({mids:['E','F','M','N'],segs:[['M','N','dash c1'],['E','F','hl c2']]})}]},
+    {h:'Властивість',it:[
+      {t:'Середня лінія трапеції <b>паралельна основам</b> і дорівнює їх <b>півсумі</b>:  EF = (AD + BC) : 2.',cap:'EF = (10 + 6) : 2 = 8 см',
+        f:()=>trap({mids:['E','F'],segs:[['E','F','hl c2']],sides:[{a:'A',b:'D',t:'10 см'},{a:'B',b:'C',t:'6 см'},{a:'E',b:'F',t:'8 см',c:'q',o:[0,-13]}]})},
+      {t:'Сума основ удвічі більша за середню лінію:  AD + BC = 2 · EF. Звідси, наприклад,  AD = 2 · EF − BC.',cap:'AD = 2 · 7 − 4 = 10 см',
+        f:()=>trap({mids:['E','F'],segs:[['E','F','hl c2']],sides:[{a:'A',b:'D',t:'? см',c:'q'},{a:'B',b:'C',t:'4 см'},{a:'E',b:'F',t:'7 см',o:[0,-13]}]})},
+      {t:'Середня лінія завжди довша за меншу основу і коротша за більшу.',cap:'BC < EF < AD',
+        f:()=>trap({mids:['E','F'],segs:[['E','F','hl c2']],ex:P=>({}),sides:[{a:'B',b:'C',t:'менша'},{a:'A',b:'D',t:'більша'}]})}]},
+    {h:'Побудова',it:[
+      {t:'Знайди середини бічних сторін AB і CD та сполучи їх. Основи не чіпаємо.',cap:'E — середина AB,  F — середина CD',
+        f:()=>{const P=trapP(0);let post='';[['A','B'],['D','C']].forEach(([a,b])=>{for(let i=1;i<4;i++){const p=lerp(P[a],P[b],i/4);post+=`<circle class="cand${i===2?' on':''}" cx="${f1(p.x)}" cy="${f1(p.y)}" r="${i===2?7:4}"/>`}});
+          return scene(P,{poly:['A','B','C','D'],segs:[['E','F','hl c2']],post,lab:['E','F'],chev:[['B','C'],['A','D']]})}}]}]}
+};
+let thT='tri',thS='0.0';
+$('topics').innerHTML=Object.keys(TOP).map(k=>`<button class="fam" data-f="${k}" aria-pressed="false"><svg viewBox="0 0 40 30">${TOP[k].ic}</svg>${TOP[k].n}<span class="num">${TOP[k].p}</span></button>`).join('');
+function drawTheory(){const T=TOP[thT],[si,ii]=thS.split('.').map(Number),cur=T.secs[si].it[ii];
+  document.querySelectorAll('#topics .fam').forEach(b=>b.setAttribute('aria-pressed',b.dataset.f===thT));
+  $('thName').textContent=T.n+' ('+T.p+')';
+  $('thFig').innerHTML=cur.f();$('thCap').innerHTML=FX(cur.cap)||' ';
+  $('thBody').innerHTML=T.secs.map((s,i)=>`<h4 class="sec">${s.h}</h4><div class="props">${s.it.map((x,j)=>`<button data-i="${i}.${j}" aria-pressed="${i+'.'+j===thS}"><span>${FX(x.t)}</span></button>`).join('')}</div>`).join('')}
+$('topics').addEventListener('click',e=>{const b=e.target.closest('.fam');if(!b)return;thT=b.dataset.f;thS='0.0';drawTheory()});
+$('thBody').addEventListener('click',e=>{const b=e.target.closest('button[data-i]');if(!b)return;thS=b.dataset.i;drawTheory();
+  if(window.innerWidth<=820)$('thFig').scrollIntoView({behavior:'smooth',block:'nearest'})});
+drawTheory();
+
+/* ---------- генератори завдань: 2 фігури × 4 види, у кожного виду кілька варіантів ---------- */
+const CM=(l,a)=>({l,a,u:'см'});
+const YN=['Так','Ні'];
+const LAB='АБВГ';
+/* сторони трикутника з парними довжинами, щоб відповіді були цілими */
+function triSides(){const x=rnd(3,9),y=rnd(3,9),z=rnd(Math.max(2,Math.abs(x-y)+1),Math.min(x+y-1,12));return [x,y,z]}
+const GEN={tri:{},trap:{}};
+/* --- трикутник: впізнавання --- */
+GEN.tri.rec=[
+  ()=>{const sh=rnd(0,1);
+    const f=[tri({sk:true,sh,mids:['K','L'],segs:[['K','L','hl c2']]}),
+      tri({sk:true,sh,mids:['K'],ex:P=>({X:lerp(P.B,P.C,.3)}),dots:['K','X'],n:{X:'L'},segs:[['K','X','hl c2']]}),
+      tri({sk:true,sh,ex:P=>({X:lerp(P.A,P.C,.72),Y:lerp(P.B,P.C,.72)}),dots:['X','Y'],n:{X:'K',Y:'L'},segs:[['X','Y','hl c2']]}),
+      tri({sk:true,sh,mids:['L'],ex:P=>({X:lerp(P.A,P.B,.33)}),dots:['X','L'],n:{X:'K'},segs:[['X','L','hl c2']]})];
+    const ord=shuffle([0,1,2,3]),ans=ord.indexOf(0);
+    return{title:'Знайди середню лінію',text:'На якому малюнку KL — середня лінія трикутника ABC?',pics:true,opts:ord.map(i=>f[i]),ans,
+      steps:['Середня лінія сполучає <b>середини</b> двох сторін трикутника.','Однакові рисочки позначають рівні відрізки. Точка, біля якої з обох боків однакові рисочки, — середина сторони.',
+        `Обидва кінці K і L — середини сторін лише на малюнку ${LAB[ans]}.`],
+      sol:`Малюнок ${LAB[ans]}: K і L — середини сторін AC і BC.`}},
+  ()=>{const X=pick(['AB','BC','AC']),I={AB:['AC','BC','K','L','KL'],BC:['AC','AB','K','M','KM'],AC:['BC','AB','L','M','LM']}[X];
+    const opts=shuffle(['KL','KM','LM','CM']);
+    return{title:'Яка середня лінія?',text:`K, L, M — середини сторін AC, BC і AB трикутника ABC. Яка середня лінія паралельна стороні ${X}?`,
+      fig:tri({sk:true,sh:rnd(0,1),mids:['K','L','M'],segs:[[X[0],X[1],'hl c1'],['K','L','diag'],['L','M','diag'],['K','M','diag']]}),opts,ans:opts.indexOf(I[4]),
+      steps:['Середня лінія паралельна тій стороні, якої вона не торкається.',`Дві інші сторони: ${I[0]} і ${I[1]}. Їхні середини: ${I[2]} і ${I[3]}.`,`Сполучаємо ${I[2]} і ${I[3]}: це середня лінія ${I[4]} ∥ ${X}.`],
+      sol:`${I[4]} ∥ ${X}, бо ${I[4]} сполучає середини сторін ${I[0]} і ${I[1]}.`}},
+  ()=>{const S=pick([
+      ['Відрізок KL сполучає середини сторін AC і BC. KL — середня лінія трикутника ABC.',0,'Так: середня лінія сполучає середини двох сторін.',()=>tri({sk:true,mids:['K','L'],segs:[['K','L','hl c2']]})],
+      ['Відрізок CM сполучає вершину C із серединою M сторони AB. CM — середня лінія трикутника ABC.',1,'Ні: CM — медіана. Середня лінія сполучає середини двох сторін, а не вершину із серединою.',()=>tri({sk:true,mids:['M'],segs:[['C','M','hl c2']]})],
+      ['Трикутник має три середні лінії.',0,'Так: середини трьох сторін можна сполучити трьома відрізками — KL, LM і KM.',()=>tri({sk:true,mids:['K','L','M'],segs:[['K','L','c2 hl'],['L','M','c2 hl'],['K','M','c2 hl']]})],
+      ['Середня лінія трикутника дорівнює стороні, якій вона паралельна.',1,'Ні: вона вдвічі менша від цієї сторони: KL = AB : 2.',()=>tri({sk:true,mids:['K','L'],segs:[['K','L','hl c2']],chev:[['K','L'],['A','B']]})],
+      ['Середня лінія KL трикутника ABC паралельна стороні AB.',0,'Так: KL ∥ AB — тій стороні, якої вона не торкається.',()=>tri({sk:true,mids:['K','L'],segs:[['K','L','hl c2']],chev:[['K','L'],['A','B']]})]]);
+    return{title:'Так чи ні?',text:S[0],fig:S[3](),opts:YN,ans:S[1],
+      steps:['Згадай: середня лінія трикутника сполучає середини двох сторін, паралельна третій стороні і дорівнює її половині.',S[2]],sol:S[2]}}];
+/* --- трикутник: побудова --- */
+const TNM=[{},{A:'M',B:'N',C:'K'},{A:'D',B:'E',C:'F'},{A:'P',B:'R',C:'S'}];
+function triCon(nmI,pickSides){const P=triP(rnd(0,2)),n=TNM[nmI],nm=k=>n[k]||k,sn=s=>nm(s[0])+nm(s[1]);
+  const sides=[['AB',pick([4,6,8])],['BC',pick([4,6])],['AC',pick([4,6])]];
+  const [s1,s2,par]=pickSides,N=s=>sides.find(x=>x[0]===s)[1];
+  return{P,n,poly:['A','B','C'],sides,target:[s1+':'+N(s1)/2,s2+':'+N(s2)/2],sn,info:[sn(s1),N(s1),sn(s2),N(s2),sn(par)]}}
+GEN.tri.con=[
+  ()=>{const par=pick(['AB','BC','AC']),o={AB:['AC','BC'],BC:['AC','AB'],AC:['AB','BC']}[par],c=triCon(0,[o[0],o[1],par]),[a,na,b,nb]=c.info;
+    return{title:'Побудуй середню лінію',text:`Побудуй середню лінію трикутника ABC, паралельну стороні ${par}. Натисни на дві точки — її кінці.`,con:c,
+      steps:[`Середня лінія, паралельна ${par}, сполучає середини двох інших сторін: ${a} і ${b}.`,`Точки ділять сторону ${a} на ${na} рівних частин. Середина — ${na/2}-га точка від ${a[0]}.`,
+        `Сторону ${b} поділено на ${nb} рівних частин. Середина — ${nb/2}-га точка від ${b[0]}.`,'Сполучи ці дві середини.'],
+      sol:`Кінці середньої лінії — середини сторін ${a} і ${b}.`}},
+  ()=>{const ni=rnd(1,3),pr=pick([['AC','BC','AB'],['AB','BC','AC'],['AB','AC','BC']]),c=triCon(ni,pr),[a,na,b,nb,par]=c.info,T=c.sn('AB')[0]+c.sn('BC');
+    return{title:'Побудуй середню лінію',text:`Побудуй середню лінію трикутника ${T}, яка сполучає середини сторін ${a} і ${b}. Натисни на дві точки.`,con:c,
+      steps:[`Потрібні лише сторони ${a} і ${b}. Сторону ${par} не чіпаємо.`,`На стороні ${a} — ${na} рівних частин. Середина — ${na/2}-га точка від ${a[0]}.`,
+        `На стороні ${b} — ${nb} рівних частин. Середина — ${nb/2}-га точка від ${b[0]}.`,`Сполучи ці точки: відрізок паралельний стороні ${par}.`],
+      sol:`Кінці середньої лінії — середини сторін ${a} і ${b}; вона паралельна ${par}.`}}];
+/* --- трикутник: знаходження довжини --- */
+GEN.tri.len=[
+  ()=>{const m=rnd(3,14);
+    return{title:'Довжина середньої лінії',text:`KL — середня лінія трикутника ABC (K лежить на AC, L — на BC). AB = ${2*m} см. Знайдіть KL.`,
+      fig:tri({sk:true,sh:rnd(0,1),mids:['K','L'],segs:[['K','L','hl c2']],sides:[{a:'A',b:'B',t:2*m+' см',at:.3},{a:'K',b:'L',t:'?',c:'q',o:[0,-14]}]}),inputs:[CM('KL',m)],
+      steps:['KL сполучає середини сторін AC і BC, тому вона паралельна третій стороні AB.','Середня лінія дорівнює половині цієї сторони: KL = AB : 2.',`KL = ${2*m} : 2 = ${m} (см).`],
+      sol:`KL = ${2*m} : 2 = ${m} см`}},
+  ()=>{const [x,y,z]=triSides(),a=2*x,b=2*y,c=2*z;
+    return{title:'Периметр трикутника з середніх ліній',text:`Сторони трикутника дорівнюють ${a} см, ${b} см і ${c} см. Знайдіть периметр трикутника, сторонами якого є середні лінії даного трикутника.`,
+      fig:tri({sk:true,sh:rnd(0,1),mids:['K','L','M'],segs:[['K','L','c2 hl'],['L','M','c2 hl'],['K','M','c2 hl']],sides:[{a:'A',b:'B',t:a,at:.25},{a:'B',b:'C',t:b,at:.25},{a:'A',b:'C',t:c,at:.25}]}),inputs:[CM('P',x+y+z)],
+      steps:['Кожна середня лінія дорівнює половині сторони, якій вона паралельна.',`Середні лінії: ${a} : 2 = ${x},  ${b} : 2 = ${y},  ${c} : 2 = ${z} (см).`,`P = ${x} + ${y} + ${z} = ${x+y+z} (см).`],
+      sol:`P = ${x} + ${y} + ${z} = ${x+y+z} см`}},
+  ()=>{const [x,y,z]=triSides(),S={AB:2*x,BC:2*y,AC:2*z},X=pick(['AB','BC','AC']),I={AB:['K','L','KL'],BC:['K','M','KM'],AC:['L','M','LM']}[X];
+    return{title:'Яку сторону ділити навпіл?',text:`У трикутнику ABC  AB = ${S.AB} см,  BC = ${S.BC} см,  AC = ${S.AC} см. Знайдіть середню лінію, паралельну стороні ${X}.`,
+      fig:tri({sk:true,sh:rnd(0,1),mids:[I[0],I[1]],segs:[[I[0],I[1],'hl c2']],sides:[{a:'A',b:'B',t:S.AB,at:.25},{a:'B',b:'C',t:S.BC,at:.28},{a:'A',b:'C',t:S.AC,at:.28}]}),inputs:[CM(I[2],S[X]/2)],
+      steps:[`Середня лінія, паралельна ${X}, дорівнює половині саме сторони ${X}. Інші сторони не потрібні.`,`${I[2]} = ${X} : 2.`,`${I[2]} = ${S[X]} : 2 = ${S[X]/2} (см).`],
+      sol:`${I[2]} = ${S[X]} : 2 = ${S[X]/2} см`}}];
+/* --- трикутник: обернені задачі --- */
+GEN.tri.inv=[
+  ()=>{const m=rnd(3,15);
+    return{title:'Сторона за середньою лінією',text:`KL — середня лінія трикутника ABC, KL ∥ AB, KL = ${m} см. Знайдіть AB.`,
+      fig:tri({sk:true,sh:rnd(0,1),mids:['K','L'],segs:[['K','L','hl c2']],sides:[{a:'A',b:'B',t:'?',c:'q',at:.3},{a:'K',b:'L',t:m+' см',o:[0,-14]}]}),inputs:[CM('AB',2*m)],
+      steps:['Середня лінія дорівнює половині сторони, якій паралельна: KL = AB : 2.','Тоді сторона вдвічі більша: AB = 2 · KL.',`AB = 2 · ${m} = ${2*m} (см).`],
+      sol:`AB = 2 · ${m} = ${2*m} см`}},
+  ()=>{const [x,y,z]=triSides();
+    return{title:'Периметр за середніми лініями',text:`Середні лінії трикутника дорівнюють ${x} см, ${y} см і ${z} см. Знайдіть периметр трикутника.`,
+      fig:tri({sk:true,sh:rnd(0,1),mids:['K','L','M'],segs:[['K','L','c2 hl'],['L','M','c2 hl'],['K','M','c2 hl']],sides:[{a:'K',b:'L',t:x,o:[0,-14]},{a:'L',b:'M',t:y,dd:-14},{a:'K',b:'M',t:z,dd:-14}]}),inputs:[CM('P',2*(x+y+z))],
+      steps:['Кожна сторона трикутника вдвічі більша за середню лінію, яка їй паралельна.',`Сторони: ${2*x},  ${2*y},  ${2*z} (см).`,`P = ${2*x} + ${2*y} + ${2*z} = ${2*(x+y+z)} (см).`],
+      sol:`P = 2 · (${x} + ${y} + ${z}) = ${2*(x+y+z)} см`}},
+  ()=>{const p=rnd(6,30);
+    return{title:'Периметр великого трикутника',text:`Периметр трикутника, вершини якого — середини сторін даного трикутника, дорівнює ${p} см. Знайдіть периметр даного трикутника.`,
+      fig:tri({sk:true,sh:rnd(0,1),mids:['K','L','M'],segs:[['K','L','c2 hl'],['L','M','c2 hl'],['K','M','c2 hl']],post:''}),inputs:[CM('P',2*p)],
+      steps:['Сторони малого трикутника KLM — середні лінії. Кожна вдвічі менша від сторони великого трикутника.','Тому і периметр малого трикутника вдвічі менший.',`P = 2 · ${p} = ${2*p} (см).`],
+      sol:`P = 2 · ${p} = ${2*p} см`}}];
+/* --- трапеція: впізнавання --- */
+GEN.trap.rec=[
+  ()=>{const sh=pick([0,1,2,4]);
+    const f=[trap({sk:true,sh,mids:['E','F'],segs:[['E','F','hl c2']]}),
+      trap({sk:true,sh,mids:['M','N'],n:{M:'E',N:'F'},segs:[['M','N','hl c2']]}),
+      trap({sk:true,sh,mids:['E'],ex:P=>({X:lerp(P.D,P.C,.28)}),dots:['E','X'],n:{X:'F'},segs:[['E','X','hl c2']]}),
+      trap({sk:true,sh,ex:P=>({X:lerp(P.A,P.B,.3),Y:lerp(P.D,P.C,.3)}),dots:['X','Y'],n:{X:'E',Y:'F'},segs:[['X','Y','hl c2']]})];
+    const ord=shuffle([0,1,2,3]),ans=ord.indexOf(0);
+    return{title:'Знайди середню лінію',text:'На якому малюнку EF — середня лінія трапеції ABCD (AD ∥ BC)?',pics:true,opts:ord.map(i=>f[i]),ans,
+      steps:['Середня лінія трапеції сполучає середини <b>бічних сторін</b> AB і CD (не основ!).','Однакові рисочки позначають рівні відрізки: так позначають середину сторони.',
+        `Обидва кінці E і F — середини бічних сторін лише на малюнку ${LAB[ans]}.`],
+      sol:`Малюнок ${LAB[ans]}: E і F — середини бічних сторін AB і CD.`}},
+  ()=>{const R0='середини бічних сторін',opts=shuffle([R0,'середини основ','середини діагоналей','вершину із серединою основи']);
+    return{title:'Що сполучає середня лінія?',text:'Середня лінія трапеції — це відрізок, що сполучає…',fig:trap({sk:true,sh:rnd(0,4),mids:['E','F'],segs:[['E','F','hl c2']]}),opts,ans:opts.indexOf(R0),
+      steps:['Основи трапеції — паралельні сторони AD і BC. Бічні сторони — AB і CD.','Середня лінія EF сполучає середини бічних сторін.'],sol:'Середня лінія сполучає середини бічних сторін.'}},
+  ()=>{const ef=()=>trap({sk:true,mids:['E','F'],segs:[['E','F','hl c2']]});const S=pick([
+      ['Середня лінія трапеції сполучає середини її бічних сторін.',0,'Так, це означення середньої лінії трапеції.',ef],
+      ['Середня лінія трапеції сполучає середини її основ.',1,'Ні: вона сполучає середини бічних сторін AB і CD. MN — не середня лінія.',()=>trap({sk:true,mids:['M','N'],segs:[['M','N','hl c1']]})],
+      ['Середня лінія трапеції паралельна основам.',0,'Так: EF ∥ AD і EF ∥ BC.',()=>trap({sk:true,mids:['E','F'],segs:[['E','F','hl c2']],chev:[['E','F']]})],
+      ['Середня лінія трапеції дорівнює піврізниці основ.',1,'Ні: вона дорівнює півсумі основ: EF = (AD + BC) : 2.',ef],
+      ['Трапеція має дві середні лінії.',1,'Ні: середня лінія трапеції одна — вона сполучає середини двох бічних сторін.',ef],
+      ['Середня лінія трапеції може бути більшою за її більшу основу.',1,'Ні: півсума основ завжди менша за більшу основу і більша за меншу.',ef]]);
+    return{title:'Так чи ні?',text:S[0],fig:S[3](),opts:YN,ans:S[1],
+      steps:['Згадай: середня лінія трапеції сполучає середини бічних сторін, паралельна основам і дорівнює їх півсумі.',S[2]],sol:S[2]}}];
+/* --- трапеція: побудова --- */
+const QNM=[{},{A:'M',B:'N',C:'K',D:'P'},{A:'A',B:'B',C:'C',D:'D'},{A:'K',B:'L',C:'M',D:'N'}];
+function trapCon(ni){const P=trapP(rnd(0,4)),n=QNM[ni],nm=k=>n[k]||k,sn=s=>nm(s[0])+nm(s[1]);
+  const sides=[['AB',pick([4,6])],['BC',4],['DC',pick([4,6])],['AD',pick([4,6,8])]],N=s=>sides.find(x=>x[0]===s)[1];
+  return{P,n,poly:['A','B','C','D'],sides,target:['AB:'+N('AB')/2,'DC:'+N('DC')/2],sn,chev:[['B','C'],['A','D']],info:[sn('AB'),N('AB'),sn('DC'),N('DC'),sn('AD'),sn('BC')]}}
+GEN.trap.con=[
+  ()=>{const c=trapCon(0),[a,na,b,nb]=c.info;
+    return{title:'Побудуй середню лінію',text:'Побудуй середню лінію трапеції ABCD (AD ∥ BC). Натисни на дві точки — її кінці.',con:c,
+      steps:['Середня лінія трапеції сполучає середини бічних сторін AB і CD. Точки на основах AD і BC не потрібні.',`Сторону AB поділено на ${na} рівних частин. Середина — ${na/2}-га точка від A.`,
+        `Сторону DC поділено на ${nb} рівних частин. Середина — ${nb/2}-га точка від D.`,'Сполучи ці дві середини.'],
+      sol:'Кінці середньої лінії — середини бічних сторін AB і CD.'}},
+  ()=>{const ni=pick([1,3]),c=trapCon(ni),[a,na,b,nb,d1,d2]=c.info,T=c.sn('AB')+c.sn('CD');
+    return{title:'Побудуй середню лінію',text:`${T} — трапеція з основами ${d1} і ${d2}. Побудуй її середню лінію: натисни на дві точки.`,con:c,
+      steps:[`Основи — ${d1} і ${d2}. Отже, бічні сторони — ${a} і ${b}.`,`Сторону ${a} поділено на ${na} рівних частин. Середина — ${na/2}-га точка від ${a[0]}.`,
+        `Сторону ${b} поділено на ${nb} рівних частин. Середина — ${nb/2}-га точка від ${b[0]}.`,'Сполучи ці дві середини: відрізок паралельний основам.'],
+      sol:`Кінці середньої лінії — середини бічних сторін ${a} і ${b}.`}}];
+/* --- трапеція: знаходження довжини --- */
+GEN.trap.len=[
+  ()=>{const b=rnd(3,11),a=b+2*rnd(1,5),m=(a+b)/2;
+    return{title:'Середня лінія за основами',text:`Основи трапеції дорівнюють ${a} см і ${b} см. Знайдіть середню лінію трапеції.`,
+      fig:trap({sk:true,sh:rnd(0,4),mids:['E','F'],segs:[['E','F','hl c2']],sides:[{a:'A',b:'D',t:a+' см'},{a:'B',b:'C',t:b+' см'},{a:'E',b:'F',t:'?',c:'q',o:[0,-13]}]}),inputs:[CM('EF',m)],
+      steps:['Середня лінія трапеції дорівнює півсумі основ: EF = (AD + BC) : 2.',`Сума основ: ${a} + ${b} = ${a+b} (см).`,`EF = ${a+b} : 2 = ${m} (см).`],
+      sol:`EF = (${a} + ${b}) : 2 = ${m} см`}},
+  ()=>{const two=Math.random()<.5;let b,a,how;if(two){b=2*rnd(2,8);a=2*b;how='удвічі більша за неї'}else{b=rnd(3,10);const k=2*rnd(1,5);a=b+k;how=`на ${k} см більша`}const m=(a+b)/2;
+    return{title:'Відстань між серединами бічних сторін',text:`Одна з основ трапеції дорівнює ${b} см, а друга — ${how}. Знайдіть відстань між серединами бічних сторін трапеції.`,
+      fig:trap({sk:true,sh:rnd(0,4),mids:['E','F'],segs:[['E','F','hl c2']],sides:[{a:'A',b:'D',t:'?',c:'c1'},{a:'B',b:'C',t:b+' см'},{a:'E',b:'F',t:'?',c:'q',o:[0,-13]}]}),inputs:[CM('EF',m)],
+      steps:['Відрізок між серединами бічних сторін — це середня лінія EF.',two?`Друга основа: 2 · ${b} = ${a} (см).`:`Друга основа: ${b} + ${a-b} = ${a} (см).`,`EF = (${a} + ${b}) : 2 = ${m} (см).`],
+      sol:`Друга основа ${a} см;  EF = (${a} + ${b}) : 2 = ${m} см`}},
+  ()=>{const c=rnd(4,12),d=rnd(4,12),m=rnd(5,15),P=c+d+2*m;
+    return{title:'Середня лінія за периметром',text:`Бічні сторони трапеції дорівнюють ${c} см і ${d} см, а її периметр — ${P} см. Знайдіть середню лінію трапеції.`,
+      fig:trap({sk:true,sh:rnd(0,4),mids:['E','F'],segs:[['E','F','hl c2']],sides:[{a:'A',b:'B',t:c},{a:'C',b:'D',t:d},{a:'E',b:'F',t:'?',c:'q',o:[0,-13]}]}),inputs:[CM('EF',m)],
+      steps:['Периметр — сума всіх сторін: P = AD + BC + AB + CD.',`Сума основ: AD + BC = ${P} − ${c} − ${d} = ${2*m} (см).`,`Середня лінія — півсума основ: EF = ${2*m} : 2 = ${m} (см).`],
+      sol:`AD + BC = ${P} − ${c} − ${d} = ${2*m};  EF = ${2*m} : 2 = ${m} см`}}];
+/* --- трапеція: обернені задачі --- */
+GEN.trap.inv=[
+  ()=>{const b=rnd(3,11),a=b+2*rnd(1,5),m=(a+b)/2,big=Math.random()<.5,g=big?a:b,x=big?b:a;
+    return{title:'Друга основа',text:`Одна з основ трапеції дорівнює ${g} см, а середня лінія — ${m} см. Знайдіть другу основу.`,
+      fig:trap({sk:true,sh:rnd(0,4),mids:['E','F'],segs:[['E','F','hl c2']],sides:[{a:'A',b:'D',t:big?g+' см':'?',c:big?'c1':'q'},{a:'B',b:'C',t:big?'?':g+' см',c:big?'q':'c1'},{a:'E',b:'F',t:m+' см',o:[0,-13]}]}),inputs:[CM(big?'BC':'AD',x)],
+      steps:['Середня лінія — півсума основ, тому сума основ удвічі більша за середню лінію.',`Сума основ: 2 · ${m} = ${2*m} (см).`,`Друга основа: ${2*m} − ${g} = ${x} (см).`],
+      sol:`${2*m} − ${g} = ${x} см`}},
+  ()=>{const b=rnd(3,10),d=2*rnd(1,4),a=b+d,m=b+d/2;
+    return{title:'Основи за середньою лінією',text:`Середня лінія трапеції дорівнює ${m} см, а одна з основ на ${d} см більша за другу. Знайдіть основи трапеції.`,
+      fig:trap({sk:true,sh:rnd(0,4),mids:['E','F'],segs:[['E','F','hl c2']],sides:[{a:'A',b:'D',t:`x + ${d}`,c:'q'},{a:'B',b:'C',t:'x',c:'q'},{a:'E',b:'F',t:m+' см',o:[0,-13]}]}),inputs:[CM('менша',b),CM('більша',a)],
+      steps:[`Сума основ удвічі більша за середню лінію: 2 · ${m} = ${2*m} (см).`,`Нехай менша основа x, тоді більша x + ${d}.  x + x + ${d} = ${2*m}.`,`2x = ${2*m} − ${d} = ${2*b},  x = ${b} (см);  більша: ${b} + ${d} = ${a} (см).`],
+      sol:`менша ${b} см, більша ${a} см`}},
+  ()=>{const c=rnd(4,12),d=rnd(4,12),m=rnd(5,15);
+    return{title:'Периметр за середньою лінією',text:`Бічні сторони трапеції дорівнюють ${c} см і ${d} см, а її середня лінія — ${m} см. Знайдіть периметр трапеції.`,
+      fig:trap({sk:true,sh:rnd(0,4),mids:['E','F'],segs:[['E','F','hl c2']],sides:[{a:'A',b:'B',t:c},{a:'C',b:'D',t:d},{a:'E',b:'F',t:m,o:[0,-13]}]}),inputs:[CM('P',c+d+2*m)],
+      steps:['Периметр — сума основ і бічних сторін.',`Сума основ удвічі більша за середню лінію: 2 · ${m} = ${2*m} (см).`,`P = ${2*m} + ${c} + ${d} = ${c+d+2*m} (см).`],
+      sol:`P = 2 · ${m} + ${c} + ${d} = ${c+d+2*m} см`}}];
+
+const PTV={rec:1,con:1,len:2,inv:2};
+const FAM={tri:'Трикутник',trap:'Трапеція'},TYP={rec:'Впізнавання',con:'Побудова',len:'Знаходження довжини',inv:'Обернена задача'};
+const ORDER=[['tri','rec'],['tri','con'],['tri','len'],['tri','inv'],['trap','rec'],['trap','con'],['trap','len'],['trap','inv']];
+const TRV={};
+function make(fam,type,avoid){const arr=GEN[fam][type];let v=rnd(0,arr.length-1);if(arr.length>1&&v===avoid)v=(v+rnd(1,arr.length-1))%arr.length;
+  const t=arr[v]();Object.assign(t,{fam,type,v,pts:PTV[type]});
+  t.text=FX(t.text);t.sol=FX(t.sol);t.steps=t.steps.map(FX);if(t.opts&&!t.pics)t.opts=t.opts.map(FX);
+  return Object.assign(t,{hintN:0,wrong:0,solved:false,shown:false,sel:null,selPts:[],vals:t.inputs?t.inputs.map(()=>''):null,marks:null,fb:''})}
+
+/* ---------- відповіді: клавіатура, вибір, побудова ---------- */
+const num=s=>{s=String(s).replace(/[°\s]|см/g,'').replace(/[−–—]/g,'-').replace(',','.');return s===''||s==='-'?NaN:Number(s)};
+function insHTML(t,pref,kp){const inp=(x,i)=>`<input id="${pref}${i}" inputmode="none" autocomplete="off" enterkeyhint="done" aria-label="${strip(x.l)}">`;
+  return `<div class="ins">${t.inputs.map((x,i)=>`<label class="in"><span>${x.l} =</span>${inp(x,i)}${x.u?`<span class="u">${x.u}</span>`:''}</label>`).join('')}</div>`+
+  (kp===false?'':`<div class="kp" aria-label="клавіатура">${['7','8','9','⌫','4','5','6','−','1','2','3',',','0','→'].map(k=>`<button type="button" data-k="${k}" class="${k==='0'||k==='→'?'w':k==='⌫'?'del':''}" aria-label="${k==='⌫'?'стерти':k==='→'?'наступне поле':k==='−'?'мінус':k}">${k==='→'?'Наступне →':k}</button>`).join('')}</div>`)}
+function bindKP(box,after){const ins=[...box.querySelectorAll('.in input')];if(!ins.length)return;
+  let act=null;const setAct=el=>{act=el;ins.forEach(i=>i.classList.toggle('act',i===el))};
+  ins.forEach(i=>{i.addEventListener('focus',()=>setAct(i));i.addEventListener('click',()=>setAct(i))});setAct(ins.find(i=>i.value==='')||ins[0]);
+  box.querySelectorAll('.kp [data-k]').forEach(b=>{b.addEventListener('mousedown',e=>e.preventDefault());b.onclick=()=>{if(!act||act.readOnly)return;const k=b.dataset.k;let v=act.value.replace(/[−–—]/g,'-');
+    if(k==='→'){setAct(ins[(ins.indexOf(act)+1)%ins.length]);return}
+    if(k==='⌫')v=v.slice(0,-1);else if(k==='−')v=v.startsWith('-')?v.slice(1):'-'+v;
+    else if(k===','){if(!/[,.]/.test(v))v=(v===''||v==='-'?v+'0':v)+','}else{if(v.replace('-','').length>=6)return;v=v.replace(/^(-?)0$/,'$1')+k}
+    act.value=v;act.classList.remove('ok','no');if(after)after()}})}
+function choiceHTML(t,locked,reveal){return `<div class="opts two${t.pics?' pics':''}">${t.opts.map((o,i)=>{const cl=(reveal&&i===t.ans)?'right':(i===t.wrongSel||(reveal&&i===t.sel&&i!==t.ans))?'wrong':'';
+  return `<button data-c="${i}" aria-pressed="${t.sel===i}" class="${cl}" ${locked?'disabled':''}>${t.pics?`<span class="pl">${LAB[i]}</span><div class="fig">${o}</div>`:`${LAB[i]}. ${o}`}</button>`}).join('')}</div>`}
+const cpt=(c,id)=>{const [s,i]=id.split(':'),n=c.sides.find(x=>x[0]===s)[1];return lerp(c.P[s[0]],c.P[s[1]],i/n)};
+function conSVG(t,reveal){const c=t.con;let post='';const sel=t.selPts.map(id=>cpt(c,id));
+  if(sel.length===2)post+=ln(sel[0],sel[1],'hl c2');
+  c.sides.forEach(([s,n])=>{for(let i=1;i<n;i++){const id=s+':'+i,p=lerp(c.P[s[0]],c.P[s[1]],i/n),on=t.selPts.includes(id),ok=reveal&&c.target.includes(id);
+    post+=`<g class="cg" data-p="${id}"><circle class="hit" cx="${f1(p.x)}" cy="${f1(p.y)}" r="13"/><circle class="cand${on?' on':''}${ok?' okp':''}" cx="${f1(p.x)}" cy="${f1(p.y)}" r="${on||ok?7:5}"/></g>`}});
+  return scene(c.P,{poly:c.poly,n:c.n,sk:true,post})}
+function conMsg(t){const c=t.con;if(t.selPts.length<2)return 'Обери дві точки.';
+  return t.selPts.map(id=>{const [s,i]=id.split(':'),n=c.sides.find(x=>x[0]===s)[1],name=c.sn(s);
+    if(!c.target.some(x=>x.split(':')[0]===s))return `Точка на стороні ${name}: ця сторона не підходить.`;
+    if(+i*2!==n)return `Точка на стороні ${name} — не середина.`;return ''}).filter(Boolean).join(' ')}
+function judge(t){if(t.inputs){const m=t.inputs.map((x,i)=>Math.abs(num(t.vals[i])-x.a)<1e-6);return{ok:m.every(Boolean),marks:m,got:m.filter(Boolean).length}}
+  if(t.con){const ok=t.selPts.length===2&&t.con.target.every(x=>t.selPts.includes(x));return{ok}}
+  return{ok:t.sel===t.ans}}
+const ready=t=>t.inputs?t.vals.some(v=>v.trim()!==''):t.con?t.selPts.length===2:t.sel!==null;
+function answerShow(t){if(t.inputs){t.vals=t.inputs.map(x=>fn(x.a).replace('−','-'));t.marks=t.inputs.map(()=>'ok')}if(t.con)t.selPts=t.con.target.slice();if(t.opts)t.sel=t.ans}
+/* малює завдання; dom-префікс pref; locked — лише перегляд */
+function taskHTML(t,pref,locked,extra){const fig=t.con?conSVG(t,locked&&t.shown):t.fig;
+  const body=t.inputs?insHTML(t,pref+'i',!locked):t.opts?choiceHTML(t,locked,locked):`<p class="selst">${t.selPts.length?`Обрано точок: ${t.selPts.length} з 2${t.selPts.length===2?'':' (ще одну)'}`:'Обери дві точки на сторонах.'}</p>`;
+  const main=`<h3>${t.title} <span class="lvl">${baly(t.pts)}</span></h3><p class="ttext">${t.text}</p>${body}${extra||''}`;
+  return t.pics?`<div>${main}</div>`:`<div class="task"><div class="fig${t.con?' con':''}">${fig}</div><div>${main}</div></div>`}
+function bindTask(box,t,pref,locked,redraw,onEnter){
+  if(t.inputs){const save=()=>{t.vals=t.inputs.map((_,i)=>$(pref+'i'+i).value);t.fb='';t.marks=null};
+    t.inputs.forEach((_,i)=>{const el=$(pref+'i'+i);el.value=t.vals[i];if(t.marks)el.classList.add(t.marks[i]===true||t.marks[i]==='ok'?'ok':'no');
+      if(locked)el.readOnly=true;else{el.oninput=save;if(onEnter)el.addEventListener('keydown',e=>{if(e.key==='Enter')onEnter()})}});
+    if(!locked)bindKP(box,()=>{save();if(t.onChange)t.onChange()})}
+  if(locked)return;
+  if(t.opts)box.querySelectorAll('.opts [data-c]').forEach(b=>b.onclick=()=>{t.sel=+b.dataset.c;t.wrongSel=null;t.fb='';redraw()});
+  if(t.con)box.querySelectorAll('[data-p]').forEach(g=>g.onclick=()=>{const id=g.dataset.p;
+    if(t.selPts.includes(id))t.selPts=t.selPts.filter(x=>x!==id);else{t.selPts.push(id);if(t.selPts.length>2)t.selPts.shift()}t.fb='';redraw()})}
+
+/* ---------- 2. тренування ---------- */
+let TR;
+function trNew(){TR={tasks:ORDER.map(([f,y])=>{const t=make(f,y,TRV[f+y]);TRV[f+y]=t.v;return t}),i:0};drawTR()}
+function drawTR(){const box=$('tr');if(TR.i>=TR.tasks.length)return drawTRend();
+  const t=TR.tasks[TR.i];
+  const dots=TR.tasks.map((x,i)=>`<i class="${i===TR.i?'cur':x.solved?(x.shown?'no':x.help?'help':'ok'):''}"></i>`).join('');
+  const steps=t.hintN?`<ol class="steps">${t.steps.slice(0,t.hintN).map((s,i)=>`<li><b>Крок ${i+1}.</b> ${s}</li>`).join('')}</ol>`:'';
+  box.innerHTML=`<div class="progress"><span>Завдання ${TR.i+1} з ${TR.tasks.length}</span><span>${FAM[t.fam]} · ${TYP[t.type]}</span></div><div class="dots">${dots}</div>`+
+    taskHTML(t,'r',t.solved,`${steps}<div id="trFb">${t.fb}</div><div class="row-btns" id="trBtns"></div>`);
+  bindTask(box,t,'r',t.solved,drawTR,trCheck);
+  const B=$('trBtns');
+  if(t.solved){B.innerHTML=`<button class="btn main" id="trNext">${TR.i===TR.tasks.length-1?'Результат':'Наступне завдання'}</button>`;$('trNext').onclick=()=>{TR.i++;drawTR();window.scrollTo(0,0)};return}
+  B.innerHTML=`<button class="btn main" id="trCheck">Перевірити</button>`+(t.hintN<t.steps.length?`<button class="btn hint" id="trHint">Крок ${t.hintN+1} з ${t.steps.length}</button>`:'')+
+    (t.wrong>=2||t.hintN>=t.steps.length?`<button class="btn" id="trShow">Показати відповідь</button>`:'');
+  $('trCheck').onclick=trCheck;
+  if($('trHint'))$('trHint').onclick=()=>{t.hintN++;drawTR()};
+  if($('trShow'))$('trShow').onclick=()=>{t.solved=t.shown=true;t.hintN=t.steps.length;answerShow(t);
+    t.fb=`<div class="fb info"><span class="ttl">Відповідь: ${t.sol}</span>Цього разу без балів. Перечитай кроки — у тестуванні буде схоже завдання.</div>`;drawTR()};
+  t.onChange=()=>{$('trCheck').disabled=!ready(t)};$('trCheck').disabled=!ready(t);
+}
+function trCheck(){const t=TR.tasks[TR.i];if(t.solved||!ready(t))return;const r=judge(t);
+  if(t.inputs)t.marks=r.marks;
+  if(r.ok){t.solved=true;t.help=t.hintN>0;const p=t.help?1:t.pts;award(p);t.hintN=t.steps.length;
+    t.fb=`<div class="fb ok"><span class="ttl">${pick(['Чудово!','Правильно!','Так тримати!','Точно в ціль!'])} +${baly(p)}</span>${t.help?'Молодець, що розібрався з кроками.':'Ось покрокове розв\'язання — звір зі своїм.'}</div>`}
+  else{t.wrong++;const empty=t.inputs&&t.vals.some(v=>v.trim()==='');
+    let msg=t.con?conMsg(t):t.inputs?(empty?'Заповни всі поля.':'Перевір червоні поля.'):'Ця відповідь неправильна.';
+    if(t.hintN<t.steps.length){t.hintN++;msg+=` Подивись крок ${t.hintN}.`}
+    if(t.opts){t.wrongSel=t.sel;t.sel=null}
+    t.fb=`<div class="fb no"><span class="ttl">Ще не зовсім.</span>${msg}</div>`}
+  drawTR()}
+function drawTRend(){const ok=TR.tasks.filter(t=>t.solved&&!t.shown&&!t.help).length,help=TR.tasks.filter(t=>t.help).length,sh=TR.tasks.filter(t=>t.shown).length;
+  $('tr').innerHTML=`<div class="final"><div class="big">${ok} / 8</div><p>самостійно${help?`, ще ${help} — з кроками`:''}${sh?`, ${sh} — з показаною відповіддю`:''}.</p>
+  <p>${ok>=7?'Блискуче! Можна йти на тестування.':ok>=4?'Добре! Пройди ще одне тренування з новими числами або спробуй тестування.':'Перечитай Пояснення і пройди тренування ще раз: числа будуть нові.'}</p>
+  <div class="row-btns" style="justify-content:center"><button class="btn main" id="trAgain">Нове тренування</button><button class="btn" id="trExam">До тестування</button></div></div>`;
+  $('trAgain').onclick=()=>{trNew();window.scrollTo(0,0)};$('trExam').onclick=()=>openTab($('t-ex'))}
+trNew();
+
+/* ---------- 3. тестування ---------- */
+let EX=null,STUD={n:'',c:''};
+function exStart(){EX={tasks:ORDER.map(([f,y])=>make(f,y,TRV[f+y])),i:0,done:false,t0:Date.now()};drawEx()}
+function exIntro(){$('ex').innerHTML=`<ul class="rules"><li>По одному завданню кожного виду: впізнавання і побудова (по 1 балу), знаходження довжини й обернена задача (по 2 бали) — для трикутника і для трапеції.</li>
+  <li>Кроків і підказок немає. Між завданнями можна переходити й змінювати відповіді, доки не натиснеш «Здати роботу».</li><li>Оцінка = кількість балів (з 12).</li></ul>
+  <div class="namebox"><label>Прізвище та ім'я<input id="exName" autocomplete="name" placeholder="Наприклад, Коваленко Марія"></label><label>Клас<input id="exClass" placeholder="8-А"></label></div>
+  <button class="btn main" id="exGo">Почати тестування</button><div id="exNameFb"></div>`;
+  try{$('exName').value=localStorage.getItem(KEY+'name')||'';$('exClass').value=localStorage.getItem(KEY+'class')||''}catch(e){}
+  $('exGo').onclick=()=>{const n=$('exName').value.trim(),c=$('exClass').value.trim();
+    if(!n){$('exNameFb').innerHTML='<div class="fb no">Впиши прізвище та ім\'я, щоб учитель знав, чий це результат.</div>';$('exName').focus();return}
+    STUD={n,c};try{localStorage.setItem(KEY+'name',n);localStorage.setItem(KEY+'class',c)}catch(e){}exStart();window.scrollTo(0,0)}}
+function drawEx(){if(EX.done)return drawExRes();const t=EX.tasks[EX.i],box=$('ex'),last=EX.i===EX.tasks.length-1;
+  box.innerHTML=`<div class="exbar"><div class="exdots">${EX.tasks.map((x,i)=>`<button data-j="${i}" class="${i===EX.i?'cur':ready(x)?'ans':''}" aria-label="Завдання ${i+1}">${i+1}</button>`).join('')}</div></div>`+
+    taskHTML(t,'e',false,`<div class="row-btns"><button class="btn" id="exPrev" ${EX.i===0?'disabled':''}>Назад</button>${!last?'<button class="btn main" id="exNext">Далі</button>':''}<button class="btn${last?' main':''}" id="exEnd">Здати роботу</button></div><div id="exFb"></div>`);
+  t.onChange=()=>{const d=box.querySelector(`.exdots [data-j="${EX.i}"]`);if(d)d.className='cur'};
+  bindTask(box,t,'e',false,drawEx);
+  const go=j=>{EX.i=j;drawEx();window.scrollTo(0,0)};
+  box.querySelectorAll('.exdots button').forEach(b=>b.onclick=()=>go(+b.dataset.j));
+  $('exPrev').onclick=()=>go(EX.i-1);if($('exNext'))$('exNext').onclick=()=>go(EX.i+1);
+  $('exEnd').onclick=()=>{const left=EX.tasks.filter(x=>!ready(x)).length;
+    if(left&&!$('exSure')){$('exFb').innerHTML=`<div class="fb info"><span class="ttl">Без відповіді ${left} ${plural(left,'завдання','завдання','завдань')}.</span>Здати все одно?<div class="row-btns"><button class="btn main" id="exSure">Так, здати</button></div></div>`;
+      $('exSure').onclick=exFinish;$('exFb').scrollIntoView({behavior:'smooth',block:'nearest'});return}
+    exFinish()}}
+function exFinish(){let total=0;EX.tasks.forEach(t=>{const r=judge(t);
+    if(t.inputs){const all=r.ok;t.got=all?t.pts:(r.got>0&&t.pts>1?1:0);t.marks=r.marks}else t.got=r.ok?t.pts:0;
+    t.res=t.got===t.pts?'ok':t.got?'part':'no';total+=t.got});
+  EX.score=total;EX.done=true;EX.min=Math.max(1,Math.round((Date.now()-EX.t0)/60000));award(total,true);EX.mail=!TEACHER_EMAIL?'off':location.protocol==='file:'?'local':'sending';drawExRes();window.scrollTo(0,0);mailRes()}
+function revLine(t){if(t.res==='ok')return t.sol;
+  let mine;if(t.inputs)mine=t.inputs.map((x,j)=>x.l+' = '+(esc(t.vals[j].trim())||'—')).join('; ');
+  else if(t.con)mine=t.selPts.length<2?'побудову не завершено':conMsg(t);
+  else mine=t.sel===null?'—':t.pics?'малюнок '+LAB[t.sel]:t.opts[t.sel];
+  return `Твоя відповідь: ${mine}.<br>Правильно: ${t.sol}`}
+const gradeOf=s=>Math.max(1,s);
+function drawExRes(){const s=EX.score,grade=gradeOf(s);
+  const msg=grade>=10?'Тему засвоєно! Так тримати.':grade>=7?'Добрий результат. Потренуй завдання, де були помилки.':grade>=4?'Є над чим попрацювати: повтори Пояснення і пройди Тренування.':'Почни з Пояснення, а потім пройди Тренування з кроками.';
+  $('ex').innerHTML=`<div class="final">${STUD.n?`<p><b>${esc(STUD.n)}${STUD.c?', '+esc(STUD.c):''}</b></p>`:''}<div class="big">${s} / 12</div><p><b>Оцінка: ${grade} ${plural(grade,'бал','бали','балів')} з 12</b> · час ${EX.min} хв</p><p>${msg}</p>
+  <div class="row-btns" style="justify-content:center"><button class="btn main" id="exSend">Надіслати результат учителю</button><button class="btn" id="exAgain">Нове тестування</button></div>
+  <div id="mailSt">${mailStHTML()}</div></div>
+  <h3>Розбір</h3><div class="review">${EX.tasks.map((t,i)=>`<div class="${t.res}"><b>${i+1}. ${FAM[t.fam]} · ${TYP[t.type]}: ${t.got} з ${baly(t.pts)}</b>${revLine(t)}</div>`).join('')}</div>`;
+  $('exAgain').onclick=exIntro;$('exSend').onclick=()=>shareRes(s,grade)}
+function mailStHTML(){const m=EX.mail;
+  if(m==='sending')return '<p class="note">Надсилаю результат учителю…</p>';
+  if(m==='ok')return '<div class="fb ok"><span class="ttl">Результат автоматично надіслано вчителю.</span>Кнопкою вище можна ще й переслати його в месенджер.</div>';
+  if(m==='local')return '<div class="fb info"><span class="ttl">Тренажер відкрито як файл, тому автоматично результат не надсилається.</span>Він надсилається сам, коли тренажер відкрито за посиланням з інтернету. Зараз натисни «Надіслати результат учителю» і перешли його в Viber чи Telegram.</div>';
+  if(m==='activate')return '<div class="fb info"><span class="ttl">Пошту вчителя ще не активовано.</span>На неї надіслано лист з кнопкою «Activate Form». Після активації результати приходитимуть автоматично. Цей результат перешли кнопкою вище.</div>';
+  if(m==='fail')return '<div class="fb no"><span class="ttl">Не вдалося надіслати автоматично.</span>Натисни «Надіслати результат учителю» і перешли його в Viber чи Telegram.</div>';
+  return '<p class="note">Кнопка відкриє Viber, Telegram чи інший месенджер з готовим повідомленням. Обери чат учителя і надішли.</p>'}
+const badList=()=>EX.tasks.map((t,i)=>t.res!=='ok'?`№${i+1} ${FAM[t.fam]}: ${TYP[t.type]} (${t.got}/${t.pts})`:'').filter(Boolean);
+async function mailRes(){if(EX.mail!=='sending')return;const s=EX.score,grade=gradeOf(s),bad=badList();
+  try{const r=await fetch('https://formsubmit.co/ajax/'+encodeURIComponent(TEACHER_EMAIL),{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},
+      body:JSON.stringify({_subject:`Середня лінія: ${STUD.n}${STUD.c?', '+STUD.c:''}, оцінка ${grade}`,_template:'table',_captcha:'false',
+        'Тема':`${TITLE}, 8 клас`,'Учень':STUD.n,'Клас':STUD.c||'—','Бали':`${s} з 12`,'Оцінка':`${grade} з 12`,'Помилки':bad.length?bad.join('; '):'немає','Час':`${EX.min} хв`,'Дата':new Date().toLocaleString('uk-UA')})});
+    const j=await r.json().catch(()=>({}));EX.mail=(r.ok&&String(j.success)!=='false')?'ok':/activat/i.test(j.message||'')?'activate':'fail'}
+  catch(e){EX.mail='fail'}
+  if($('mailSt'))$('mailSt').innerHTML=mailStHTML()}
+function resText(s,grade){const d=new Date(),pad=n=>String(n).padStart(2,'0'),bad=badList();
+  return `Тестування «${TITLE}», 8 клас\nУчень: ${STUD.n||'—'}${STUD.c?', '+STUD.c:''}\nРезультат: ${s} з 12 балів, оцінка ${grade} з 12\n`+
+    (bad.length?`Помилки: ${bad.join('; ')}\n`:'Без помилок!\n')+`Час: ${EX.min} хв, ${pad(d.getDate())}.${pad(d.getMonth()+1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}\nУчитель: Сидорчук Н.В.`}
+async function shareRes(s,grade){const text=resText(s,grade);
+  if(navigator.share){try{await navigator.share({title:'Результат тестування',text});return}catch(e){if(e&&e.name==='AbortError')return}}
+  try{await navigator.clipboard.writeText(text);toast('Результат скопійовано. Встав його в чат учителя.')}
+  catch(e){window.prompt('Скопіюй цей текст і надішли вчителю:',text)}}
+exIntro();
+
+try{const s=localStorage.getItem(KEY+'tab');if(s&&$(s))openTab($(s))}catch(e){}
+</script>
+</body>
+</html>
